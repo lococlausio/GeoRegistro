@@ -1,5 +1,6 @@
 package cl.reymago.georegistro;
 
+
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
@@ -7,6 +8,12 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,13 +40,13 @@ public class RegistroActivity extends AppCompatActivity {
         etLongitud = findViewById(R.id.etLongitud);
         spCategoria = findViewById(R.id.spCategoria);
 
-        // La fecha y hora se llena sola con el momento actual
-        SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-        etFechaHora.setText(formato.format(new Date()));
+        ponerFechaActual();
     }
 
     public void guardar(View view) {
         boolean valido = true;
+        double latitud = 0;
+        double longitud = 0;
 
         String titulo = etTitulo.getText().toString().trim();
         String descripcion = etDescripcion.getText().toString().trim();
@@ -67,7 +74,7 @@ public class RegistroActivity extends AppCompatActivity {
             valido = false;
         } else {
             try {
-                double latitud = Double.parseDouble(latitudTexto);
+                latitud = Double.parseDouble(latitudTexto);
                 if (latitud < -90 || latitud > 90) {
                     etLatitud.setError("Debe estar entre -90 y 90");
                     valido = false;
@@ -83,7 +90,7 @@ public class RegistroActivity extends AppCompatActivity {
             valido = false;
         } else {
             try {
-                double longitud = Double.parseDouble(longitudTexto);
+                longitud = Double.parseDouble(longitudTexto);
                 if (longitud < -180 || longitud > 180) {
                     etLongitud.setError("Debe estar entre -180 y 180");
                     valido = false;
@@ -94,15 +101,70 @@ public class RegistroActivity extends AppCompatActivity {
             }
         }
 
-        if (valido) {
-            // Paso 3: aquí se guardará en Firestore
-            Toast.makeText(this, "Formulario válido", Toast.LENGTH_SHORT).show();
-        } else {
+        if (!valido) {
             Toast.makeText(this, "Revise los campos marcados", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        // Si no hay internet, avisamos y no intentamos guardar
+        if (!Red.hayInternet(this)) {
+            Toast.makeText(this, "Sin conexión a internet. No se pudo guardar.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Si todavía no hay sesión anónima, la reintentamos
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            Toast.makeText(this, "Sin sesión. Intente nuevamente en unos segundos.", Toast.LENGTH_LONG).show();
+            FirebaseAuth.getInstance().signInAnonymously();
+            return;
+        }
+
+        String categoria = spCategoria.getSelectedItem().toString();
+        String fechaHora = etFechaHora.getText().toString();
+
+        Incidencia incidencia = new Incidencia(titulo, descripcion, categoria, fechaHora, latitud, longitud);
+        incidencia.setTimestamp(System.currentTimeMillis());
+
+        // Desactivamos el botón para que no se guarde dos veces con un doble toque
+        view.setEnabled(false);
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("incidencias").add(incidencia)
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        Toast.makeText(RegistroActivity.this, "Incidencia guardada", Toast.LENGTH_SHORT).show();
+                        limpiarFormulario();
+                        view.setEnabled(true);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(RegistroActivity.this, "Error al guardar: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        view.setEnabled(true);
+                    }
+                });
     }
 
     public void volver(View view) {
         finish();
     }
+
+    private void ponerFechaActual() {
+        SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+        etFechaHora.setText(formato.format(new Date()));
+    }
+
+    private void limpiarFormulario() {
+        etTitulo.setText("");
+        etDescripcion.setText("");
+        etLatitud.setText("");
+        etLongitud.setText("");
+        spCategoria.setSelection(0);
+        ponerFechaActual();
+        etTitulo.requestFocus();
+    }
+
+
 }

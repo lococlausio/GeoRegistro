@@ -8,6 +8,7 @@ public class Incidencia {
     private String fechaHora;
     private double latitud;
     private double longitud;
+    private long timestamp;
 
 
     // constructor vacio para reconstruir objetos al leer en firestore
@@ -41,4 +42,6 @@ public class Incidencia {
 
     public double getLongitud() { return longitud; }
     public void setLongitud(double longitud) { this.longitud = longitud; }
+    public long getTimestamp() { return timestamp; }
+    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 }

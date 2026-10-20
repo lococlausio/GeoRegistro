@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /incidencias/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() > 0
+        && request.resource.data.latitud is number
+        && request.resource.data.longitud is number;
+      allow update, delete: if false;
+    }
+  }
+}
