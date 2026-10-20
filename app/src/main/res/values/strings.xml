@@ -1,3 +1,31 @@
 <resources>
     <string name="app_name">GeoRegistro</string>
+    <string name="subtitulo_main">Registro de incidencias en terreno</string>
+    <string name="btn_registrar">Registrar incidencia</string>
+    <string name="btn_listado">Ver historial</string>
+    <string name="btn_mapa">Ver mapa</string>
+    <string name="btn_sensor">Sensor de movimiento</string>
+
+    <string name="titulo_registro">Nueva incidencia</string>
+    <string name="hint_titulo">Título</string>
+    <string name="hint_descripcion">Descripción</string>
+    <string name="label_categoria">Categoría</string>
+    <string name="hint_fecha">Fecha y hora (automática)</string>
+    <string name="hint_latitud">Latitud</string>
+    <string name="hint_longitud">Longitud</string>
+    <string name="btn_guardar">Guardar</string>
+
+    <string-array name="categorias">
+        <item>Seleccione una categoría</item>
+        <item>Infraestructura</item>
+        <item>Seguridad</item>
+        <item>Medio ambiente</item>
+        <item>Otro</item>
+    </string-array>
+
+    <string name="btn_volver">Volver</string>
+    <string name="titulo_listado">Historial de incidencias</string>
+    <string name="titulo_mapa">Mapa de incidencias</string>
+    <string name="titulo_sensor">Sensor de movimiento</string>
+    <string name="proximamente">Esta pantalla se completará en un paso siguiente.</string>
 </resources>
