@@ -33,4 +33,7 @@
 
     <string name="cargando_mapa">Cargando incidencias...</string>
 
+    <string name="sensor_esperando">Esperando datos del sensor...</string>
+    <string name="sensor_sin_movimiento">Sin movimiento</string>
+
 </resources>
