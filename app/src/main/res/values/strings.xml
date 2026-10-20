@@ -30,4 +30,7 @@
     <string name="proximamente">Esta pantalla se completará en un paso siguiente.</string>
     <string name="btn_ubicacion">Obtener ubicación actual</string>
     <string name="gps_inicial">Puede usar el GPS o escribir las coordenadas a mano.</string>
+
+    <string name="cargando_mapa">Cargando incidencias...</string>
+
 </resources>

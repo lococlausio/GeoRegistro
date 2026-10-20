@@ -1,6 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.services)
+}
+
+// Lee la clave de Maps desde local.properties (archivo que NO se sube a GitHub)
+val propiedadesLocales = Properties()
+val archivoLocal = rootProject.file("local.properties")
+if (archivoLocal.exists()) {
+    propiedadesLocales.load(archivoLocal.inputStream())
 }
 
 android {
@@ -17,6 +26,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Reemplaza ${MAPS_API_KEY} en el AndroidManifest al compilar
+        manifestPlaceholders["MAPS_API_KEY"] = propiedadesLocales.getProperty("MAPS_API_KEY", "")
     }
 
     buildTypes {
@@ -37,11 +49,15 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
     implementation(libs.material)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.espresso.core)
-    androidTestImplementation(libs.ext.junit)
+
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
+
     implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.ext.junit)
 }
