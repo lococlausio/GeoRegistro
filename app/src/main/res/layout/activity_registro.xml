@@ -56,6 +56,21 @@
             android:hint="@string/hint_fecha"
             android:inputType="none" />
 
+        <Button
+            android:id="@+id/btnUbicacion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:onClick="obtenerUbicacionActual"
+            android:text="@string/btn_ubicacion" />
+
+        <TextView
+            android:id="@+id/tvEstadoGps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/gps_inicial" />
+
         <EditText
             android:id="@+id/etLatitud"
             android:layout_width="match_parent"

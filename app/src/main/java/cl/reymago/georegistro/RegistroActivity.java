@@ -1,14 +1,26 @@
 package cl.reymago.georegistro;
 
-
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -18,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 
 public class RegistroActivity extends AppCompatActivity {
 
@@ -27,6 +40,31 @@ public class RegistroActivity extends AppCompatActivity {
     EditText etLatitud;
     EditText etLongitud;
     Spinner spCategoria;
+
+    // GPS
+    TextView tvEstadoGps;
+    Button btnUbicacion;
+    FusedLocationProviderClient clienteUbicacion;
+
+    // GPS: recibe la respuesta del usuario cuando el sistema le pregunta por el permiso
+    ActivityResultLauncher<String[]> lanzadorPermisos = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(),
+            new ActivityResultCallback<Map<String, Boolean>>() {
+                @Override
+                public void onActivityResult(Map<String, Boolean> resultado) {
+                    Boolean precisa = resultado.get(Manifest.permission.ACCESS_FINE_LOCATION);
+                    Boolean aproximada = resultado.get(Manifest.permission.ACCESS_COARSE_LOCATION);
+
+                    if (Boolean.TRUE.equals(precisa) || Boolean.TRUE.equals(aproximada)) {
+                        buscarUbicacion();
+                    } else {
+                        tvEstadoGps.setText("Permiso de ubicación denegado. Escriba las coordenadas a mano "
+                                + "o habilite el permiso en Ajustes > Apps > GeoRegistro > Permisos.");
+                        Toast.makeText(RegistroActivity.this,
+                                "Permiso de ubicación denegado", Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +78,69 @@ public class RegistroActivity extends AppCompatActivity {
         etLongitud = findViewById(R.id.etLongitud);
         spCategoria = findViewById(R.id.spCategoria);
 
+        // GPS
+        tvEstadoGps = findViewById(R.id.tvEstadoGps);
+        btnUbicacion = findViewById(R.id.btnUbicacion);
+        clienteUbicacion = LocationServices.getFusedLocationProviderClient(this);
+
         ponerFechaActual();
+    }
+
+    // GPS: se ejecuta al tocar "Obtener ubicación actual"
+    public void obtenerUbicacionActual(View view) {
+        if (tienePermiso()) {
+            buscarUbicacion();
+        } else {
+            lanzadorPermisos.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION});
+        }
+    }
+
+    // GPS: true si el usuario ya dio permiso de ubicación (precisa o aproximada)
+    private boolean tienePermiso() {
+        boolean precisa = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean aproximada = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return precisa || aproximada;
+    }
+
+    // GPS: pide la ubicación actual. Solo se llama cuando ya hay permiso.
+    @SuppressLint("MissingPermission")
+    private void buscarUbicacion() {
+        tvEstadoGps.setText("Obteniendo ubicación...");
+        btnUbicacion.setEnabled(false);
+
+        clienteUbicacion.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                .addOnSuccessListener(new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location ubicacion) {
+                        btnUbicacion.setEnabled(true);
+
+                        // Puede ser null si el GPS está apagado o no hay señal
+                        if (ubicacion == null) {
+                            tvEstadoGps.setText("No se pudo obtener la ubicación. "
+                                    + "Active el GPS e intente de nuevo, o escriba las coordenadas a mano.");
+                            return;
+                        }
+
+                        // Locale.US para que el decimal lleve punto y no coma
+                        String lat = String.format(Locale.US, "%.6f", ubicacion.getLatitude());
+                        String lng = String.format(Locale.US, "%.6f", ubicacion.getLongitude());
+
+                        etLatitud.setText(lat);
+                        etLongitud.setText(lng);
+                        tvEstadoGps.setText("Ubicación actual: " + lat + ", " + lng);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(Exception e) {
+                        btnUbicacion.setEnabled(true);
+                        tvEstadoGps.setText("Error al obtener la ubicación: " + e.getMessage());
+                    }
+                });
     }
 
     public void guardar(View view) {
@@ -162,9 +262,8 @@ public class RegistroActivity extends AppCompatActivity {
         etLatitud.setText("");
         etLongitud.setText("");
         spCategoria.setSelection(0);
+        tvEstadoGps.setText(R.string.gps_inicial);
         ponerFechaActual();
         etTitulo.requestFocus();
     }
-
-
 }
